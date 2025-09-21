@@ -25,7 +25,7 @@ services:
     environment:
       PORT: 42001
       # small delay to simulate slow secondary and to show Master's blocking behavior
-      SECONDARY_DELAY: "3"
+      SECONDARY_DELAY: "10"
     ports:
       - "42001:42001"
 
