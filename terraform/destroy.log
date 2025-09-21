@@ -1,0 +1,206 @@
+google_storage_bucket.tf_bucket: Refreshing state... [id=my-sample-tf-bucket-12345]
+google_bigquery_dataset.tf_dataset: Refreshing state... [id=projects/terraformtest-472218/datasets/my_tf_dataset]
+google_compute_instance.tf_vm: Refreshing state... [id=projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm]
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # google_bigquery_dataset.tf_dataset will be destroyed
+  - resource "google_bigquery_dataset" "tf_dataset" {
+      - creation_time                   = 1758449382531 -> null
+      - dataset_id                      = "my_tf_dataset" -> null
+      - default_partition_expiration_ms = 0 -> null
+      - default_table_expiration_ms     = 0 -> null
+      - delete_contents_on_destroy      = false -> null
+      - effective_labels                = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - etag                            = "5e1587kl6zK8jI8tAbDWlA==" -> null
+      - id                              = "projects/terraformtest-472218/datasets/my_tf_dataset" -> null
+      - is_case_insensitive             = false -> null
+      - labels                          = {} -> null
+      - last_modified_time              = 1758449382531 -> null
+      - location                        = "us-central1" -> null
+      - max_time_travel_hours           = "168" -> null
+      - project                         = "terraformtest-472218" -> null
+      - resource_tags                   = {} -> null
+      - self_link                       = "https://bigquery.googleapis.com/bigquery/v2/projects/terraformtest-472218/datasets/my_tf_dataset" -> null
+      - terraform_labels                = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+        # (4 unchanged attributes hidden)
+
+      - access {
+          - role           = "OWNER" -> null
+          - user_by_email  = "sokilnatalka@gmail.com" -> null
+            # (4 unchanged attributes hidden)
+        }
+      - access {
+          - role           = "OWNER" -> null
+          - special_group  = "projectOwners" -> null
+            # (4 unchanged attributes hidden)
+        }
+      - access {
+          - role           = "READER" -> null
+          - special_group  = "projectReaders" -> null
+            # (4 unchanged attributes hidden)
+        }
+      - access {
+          - role           = "WRITER" -> null
+          - special_group  = "projectWriters" -> null
+            # (4 unchanged attributes hidden)
+        }
+    }
+
+  # google_compute_instance.tf_vm will be destroyed
+  - resource "google_compute_instance" "tf_vm" {
+      - can_ip_forward             = false -> null
+      - cpu_platform               = "Intel Broadwell" -> null
+      - creation_timestamp         = "2025-09-21T03:09:45.006-07:00" -> null
+      - current_status             = "RUNNING" -> null
+      - deletion_protection        = false -> null
+      - effective_labels           = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - enable_display             = false -> null
+      - id                         = "projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm" -> null
+      - instance_id                = "8934030366744932359" -> null
+      - label_fingerprint          = "vezUS-42LLM=" -> null
+      - labels                     = {} -> null
+      - machine_type               = "e2-micro" -> null
+      - metadata                   = {} -> null
+      - metadata_fingerprint       = "KfPC_-9LycM=" -> null
+      - name                       = "my-tf-vm" -> null
+      - project                    = "terraformtest-472218" -> null
+      - resource_policies          = [] -> null
+      - self_link                  = "https://www.googleapis.com/compute/v1/projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm" -> null
+      - tags                       = [] -> null
+      - tags_fingerprint           = "42WmSpB8rSM=" -> null
+      - terraform_labels           = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - zone                       = "us-central1-a" -> null
+        # (4 unchanged attributes hidden)
+
+      - boot_disk {
+          - auto_delete                     = true -> null
+          - device_name                     = "persistent-disk-0" -> null
+          - force_attach                    = false -> null
+          - guest_os_features               = [
+              - "UEFI_COMPATIBLE",
+              - "VIRTIO_SCSI_MULTIQUEUE",
+              - "GVNIC",
+            ] -> null
+          - mode                            = "READ_WRITE" -> null
+          - source                          = "https://www.googleapis.com/compute/v1/projects/terraformtest-472218/zones/us-central1-a/disks/my-tf-vm" -> null
+            # (6 unchanged attributes hidden)
+
+          - initialize_params {
+              - architecture                = "X86_64" -> null
+              - enable_confidential_compute = false -> null
+              - image                       = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-11-bullseye-v20250915" -> null
+              - labels                      = {} -> null
+              - provisioned_iops            = 0 -> null
+              - provisioned_throughput      = 0 -> null
+              - resource_manager_tags       = {} -> null
+              - resource_policies           = [] -> null
+              - size                        = 10 -> null
+              - type                        = "pd-standard" -> null
+                # (2 unchanged attributes hidden)
+            }
+        }
+
+      - network_interface {
+          - internal_ipv6_prefix_length = 0 -> null
+          - name                        = "nic0" -> null
+          - network                     = "https://www.googleapis.com/compute/v1/projects/terraformtest-472218/global/networks/default" -> null
+          - network_ip                  = "10.128.0.3" -> null
+          - queue_count                 = 0 -> null
+          - stack_type                  = "IPV4_ONLY" -> null
+          - subnetwork                  = "https://www.googleapis.com/compute/v1/projects/terraformtest-472218/regions/us-central1/subnetworks/default" -> null
+          - subnetwork_project          = "terraformtest-472218" -> null
+            # (4 unchanged attributes hidden)
+
+          - access_config {
+              - nat_ip                 = "34.55.242.113" -> null
+              - network_tier           = "PREMIUM" -> null
+                # (1 unchanged attribute hidden)
+            }
+        }
+
+      - scheduling {
+          - automatic_restart           = true -> null
+          - availability_domain         = 0 -> null
+          - min_node_cpus               = 0 -> null
+          - on_host_maintenance         = "MIGRATE" -> null
+          - preemptible                 = false -> null
+          - provisioning_model          = "STANDARD" -> null
+            # (2 unchanged attributes hidden)
+        }
+
+      - shielded_instance_config {
+          - enable_integrity_monitoring = true -> null
+          - enable_secure_boot          = false -> null
+          - enable_vtpm                 = true -> null
+        }
+    }
+
+  # google_storage_bucket.tf_bucket will be destroyed
+  - resource "google_storage_bucket" "tf_bucket" {
+      - default_event_based_hold    = false -> null
+      - effective_labels            = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - enable_object_retention     = false -> null
+      - force_destroy               = true -> null
+      - id                          = "my-sample-tf-bucket-12345" -> null
+      - labels                      = {} -> null
+      - location                    = "US-CENTRAL1" -> null
+      - name                        = "my-sample-tf-bucket-12345" -> null
+      - project                     = "terraformtest-472218" -> null
+      - project_number              = 623669888470 -> null
+      - public_access_prevention    = "inherited" -> null
+      - requester_pays              = false -> null
+      - self_link                   = "https://www.googleapis.com/storage/v1/b/my-sample-tf-bucket-12345" -> null
+      - storage_class               = "STANDARD" -> null
+      - terraform_labels            = {
+          - "goog-terraform-provisioned" = "true"
+        } -> null
+      - time_created                = "2025-09-21T10:09:42.588Z" -> null
+      - uniform_bucket_level_access = false -> null
+      - updated                     = "2025-09-21T10:09:42.588Z" -> null
+      - url                         = "gs://my-sample-tf-bucket-12345" -> null
+
+      - hierarchical_namespace {
+          - enabled = false -> null
+        }
+
+      - soft_delete_policy {
+          - effective_time             = "2025-09-21T10:09:42.588Z" -> null
+          - retention_duration_seconds = 604800 -> null
+        }
+    }
+
+Plan: 0 to add, 0 to change, 3 to destroy.
+
+Do you really want to destroy all resources?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value: yes
+
+google_storage_bucket.tf_bucket: Destroying... [id=my-sample-tf-bucket-12345]
+google_bigquery_dataset.tf_dataset: Destroying... [id=projects/terraformtest-472218/datasets/my_tf_dataset]
+google_compute_instance.tf_vm: Destroying... [id=projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm]
+google_bigquery_dataset.tf_dataset: Destruction complete after 0s
+google_storage_bucket.tf_bucket: Destruction complete after 1s
+google_compute_instance.tf_vm: Still destroying... [id=projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm, 00m10s elapsed]
+google_compute_instance.tf_vm: Still destroying... [id=projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm, 00m20s elapsed]
+google_compute_instance.tf_vm: Still destroying... [id=projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm, 00m30s elapsed]
+google_compute_instance.tf_vm: Still destroying... [id=projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm, 00m40s elapsed]
+google_compute_instance.tf_vm: Still destroying... [id=projects/terraformtest-472218/zones/us-central1-a/instances/my-tf-vm, 00m50s elapsed]
+google_compute_instance.tf_vm: Destruction complete after 52s
+
+Destroy complete! Resources: 3 destroyed.
