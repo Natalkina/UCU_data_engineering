@@ -55,7 +55,7 @@ def append_message():
         logging.info("Appended message locally: %s", entry)
 
     while True:
-        if state['acks'][message_id] >= count(secondaries):
+        if state['acks'][message_id] >= len(secondaries):
             break
         else:
             time.sleep(0.005)
