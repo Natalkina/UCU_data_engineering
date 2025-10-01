@@ -1,3 +1,5 @@
+from itertools import count
+
 from flask import Flask, request, jsonify
 import logging
 import os
@@ -42,7 +44,6 @@ def append_message():
         return jsonify({"error": "missing 'message' in JSON body"}), 400
 
     msg = payload["message"]
-    write_concern = 1 if "write_concern" not in payload else int(payload["write_concern"])
 
     # Acquire lock to enforce strict ordering
     with append_lock:
@@ -53,12 +54,11 @@ def append_message():
         state['acks'][message_id] = 0
         logging.info("Appended message locally: %s", entry)
 
-    if write_concern > 1:
-        while True:
-            if state['acks'][message_id] >= write_concern - 1:
-                break
-            else:
-                time.sleep(0.005)
+    while True:
+        if state['acks'][message_id] >= count(secondaries):
+            break
+        else:
+            time.sleep(0.005)
 
     return jsonify({"status": "ok", "entry": entry}), 201
 
@@ -92,7 +92,7 @@ def replicate(secondaryUrl):
 
             send_to_secondary(secondaryUrl, message, message_id)
 
-            state['last_ack_message_id'][secondaryUrl] += 1
+            state['last_ack_message_id'][secondaryUrl] = message_id
 
             with replication_lock:
                 state['acks'][message_id] += 1
