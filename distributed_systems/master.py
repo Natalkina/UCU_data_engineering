@@ -1,5 +1,3 @@
-from itertools import count
-
 from flask import Flask, request, jsonify
 import logging
 import os
@@ -44,21 +42,24 @@ def append_message():
         return jsonify({"error": "missing 'message' in JSON body"}), 400
 
     msg = payload["message"]
+    write_concern = 1 if "write_concern" not in payload else int(payload["write_concern"])
 
     # Acquire lock to enforce strict ordering
     with append_lock:
         timestamp = time.time()
-        entry = {"message": msg, "timestamp": timestamp}
+        message_id = len(state['messages'])
+        entry = {"id": message_id, "message": msg, "timestamp": timestamp}
         state['messages'].append(entry)
-        message_id = len(state['messages']) - 1
+
         state['acks'][message_id] = 0
         logging.info("Appended message locally: %s", entry)
 
-    while True:
-        if state['acks'][message_id] >= len(secondaries):
-            break
-        else:
-            time.sleep(0.005)
+    if write_concern > 1:
+        while True:
+            if state['acks'][message_id] >= write_concern - 1:
+                break
+            else:
+                time.sleep(0.005)
 
     return jsonify({"status": "ok", "entry": entry}), 201
 
@@ -71,10 +72,10 @@ def send_to_secondary(secondaryUrl, message, message_id):
             logging.info("ACK from %s", secondaryUrl)
         else:
             logging.error("Non-OK response from %s: %s - %s", secondaryUrl, resp.status_code, resp.text)
-            return jsonify({"error": f"replication failed to {secondaryUrl}", "status": resp.status_code}), 500
+            raise Exception("Non ok response")
     except requests.RequestException as e:
         logging.exception("Failed to replicate to %s: %s", secondaryUrl, e)
-        return jsonify({"error": f"replication to {secondaryUrl} failed", "details": str(e)}), 500
+        raise e
 
 def replicate(secondaryUrl):
     logging.info("Starting replication thread...")
