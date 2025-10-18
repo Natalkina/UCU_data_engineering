@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   master:
     build:
@@ -28,6 +27,8 @@ services:
       SECONDARY_DELAY: "10"
     ports:
       - "42001:42001"
+    volumes:
+      - .:/app
 
   secondary2:
     build:
@@ -40,3 +41,5 @@ services:
       SECONDARY_DELAY: "0"
     ports:
       - "42002:42002"
+    volumes:
+      - .:/app

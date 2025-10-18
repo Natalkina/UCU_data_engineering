@@ -1,9 +1,11 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, request, jsonify
 import logging
 import os
 import requests
 import time
 import threading
+from itertools import count
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [MASTER] %(levelname)s - %(message)s")
@@ -15,21 +17,14 @@ secondaries = [s.strip().rstrip("/") for s in secondaries_env.split(",") if s.st
 # in-memory replicated log
 state = {
     "messages": [],
-    "acks": {},
-    "last_ack_message_id": {},
 }
 
-for secondaryUrl in secondaries:
-    state["last_ack_message_id"][secondaryUrl] = -1
+message_id_count = count()
 
 REPLICATION_TIMEOUT = float(os.environ.get("REPLICATION_TIMEOUT", "10"))
 
 # lock to enforce message ordering
 append_lock = threading.Lock()
-replication_lock = threading.Lock()
-send_to_secondary_lock = {}
-for secondaryUrl in secondaries:
-    send_to_secondary_lock[secondaryUrl] = threading.Lock()
 
 @app.route("/messages", methods=["GET"])
 def get_messages():
@@ -42,30 +37,47 @@ def append_message():
         return jsonify({"error": "missing 'message' in JSON body"}), 400
 
     msg = payload["message"]
-    write_concern = 1 if "write_concern" not in payload else int(payload["write_concern"])
+    expected_write_concern = 1 if "write_concern" not in payload else int(payload["write_concern"])
 
     # Acquire lock to enforce strict ordering
     with append_lock:
         timestamp = time.time()
-        message_id = len(state['messages'])
+        message_id = next(message_id_count)
+
         entry = {"id": message_id, "message": msg, "timestamp": timestamp}
         state['messages'].append(entry)
 
-        state['acks'][message_id] = 0
+        expected_write_concern -= 1
         logging.info("Appended message locally: %s", entry)
 
-    if write_concern > 1:
-        while True:
-            if state['acks'][message_id] >= write_concern - 1:
-                break
-            else:
-                time.sleep(0.005)
+    if expected_write_concern == 0:
+        return jsonify({"status": "ok", "entry": entry}), 201
 
-    return jsonify({"status": "ok", "entry": entry}), 201
+    futures = []
+    executor = ThreadPoolExecutor(max_workers=len(secondaries))
+    for secondaryUrl in secondaries:
+        future = executor.submit(replicate, secondaryUrl, message_id)
+        futures.append(future)
 
-def send_to_secondary(secondaryUrl, message, message_id):
+    for fut in as_completed(futures):
+        try:
+            ok = fut.result()
+            expected_write_concern -= 1
+
+            if expected_write_concern == 0:
+                return jsonify({"status": "ok", "entry": entry}), 201
+        except:
+            logging.info("Failed replication")
+
+    return jsonify({"status": "error", "entry": entry}), 500
+
+def replicate(secondaryUrl, message_id):
+    message = state['messages'][message_id]
+    logging.info("Replicating message %s...", message['message'])
+
     replicate_url = f"{secondaryUrl}/replicate"
     logging.info("Replicating to %s ...", replicate_url)
+
     try:
         resp = requests.post(replicate_url, json=message, timeout=REPLICATION_TIMEOUT)
         if resp.status_code == 200:
@@ -77,37 +89,10 @@ def send_to_secondary(secondaryUrl, message, message_id):
         logging.exception("Failed to replicate to %s: %s", secondaryUrl, e)
         raise e
 
-def replicate(secondaryUrl):
-    logging.info("Starting replication thread...")
-
-    while True:
-        if len(state['messages']) - 1 <= state['last_ack_message_id'][secondaryUrl]:
-            time.sleep(0.005)
-            continue
-
-        with send_to_secondary_lock[secondaryUrl]:
-            message_id = state['last_ack_message_id'][secondaryUrl] + 1
-            message = state['messages'][message_id]
-
-            logging.info("Replicating message %s...", message['message'])
-
-            send_to_secondary(secondaryUrl, message, message_id)
-
-            state['last_ack_message_id'][secondaryUrl] = message_id
-
-            with replication_lock:
-                state['acks'][message_id] += 1
-
-            logging.info("Replication finished, returning success to client")
-
+    logging.info("Replication finished, returning success to client")
 
 
 if __name__ == "__main__":
-    # run replication thread
-    for secondaryUrl in secondaries:
-        replicate_thread = threading.Thread(target=replicate, daemon=True, args=(secondaryUrl,))
-        replicate_thread.start()
-
     # run HTTP server
     port = int(os.environ.get("PORT"))
     host = "0.0.0.0"
