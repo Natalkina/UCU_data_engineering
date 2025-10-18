@@ -52,12 +52,6 @@ curl -X POST -H "Content-Type: application/json" http://localhost:42000/messages
 curl -X POST -H "Content-Type: application/json" http://localhost:42000/messages -d '{"message": "test", "w": 1, "id": 100}'
 ```
 
-### Автоматичне тестування
-
-```bash
-python test_write_concern.py
-```
-
 ### Архітектура
 
 - **Master** (порт 42000): обробляє запити та чекає ACK згідно з write concern
