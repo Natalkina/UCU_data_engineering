@@ -38,6 +38,8 @@ def append_message():
 
     msg = payload["message"]
     expected_write_concern = 1 if "write_concern" not in payload else int(payload["write_concern"])
+    if expected_write_concern < 1 or expected_write_concern > len(secondaries) + 1:
+        return jsonify({"error": "invalid write_concern"}), 400
 
     # Acquire lock to enforce strict ordering
     with append_lock:
@@ -50,14 +52,14 @@ def append_message():
         expected_write_concern -= 1
         logging.info("Appended message locally: %s", entry)
 
-    if expected_write_concern == 0:
-        return jsonify({"status": "ok", "entry": entry}), 201
-
     futures = []
     executor = ThreadPoolExecutor(max_workers=len(secondaries))
     for secondaryUrl in secondaries:
         future = executor.submit(replicate, secondaryUrl, message_id)
         futures.append(future)
+
+    if expected_write_concern == 0:
+        return jsonify({"status": "ok", "entry": entry}), 201
 
     for fut in as_completed(futures):
         try:
