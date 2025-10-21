@@ -1,0 +1,46 @@
+NAMESPACE     NAME                                   READY   STATUS    RESTARTS      AGE
+default       pod/llm-864b957b4d-h97jw               1/1     Running   0             42m
+default       pod/webapp-b8b8758d6-lx7lv             1/1     Running   0             6m54s
+kube-system   pod/coredns-66bc5c9577-8klz8           1/1     Running   0             57m
+kube-system   pod/etcd-minikube                      1/1     Running   0             57m
+kube-system   pod/kube-apiserver-minikube            1/1     Running   0             57m
+kube-system   pod/kube-controller-manager-minikube   1/1     Running   0             57m
+kube-system   pod/kube-proxy-qb7zj                   1/1     Running   0             57m
+kube-system   pod/kube-scheduler-minikube            1/1     Running   0             57m
+kube-system   pod/storage-provisioner                1/1     Running   1 (57m ago)   57m
+
+NAMESPACE     NAME                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                  AGE
+default       service/kubernetes   ClusterIP   10.96.0.1       <none>        443/TCP                  57m
+default       service/llm          ClusterIP   10.100.39.81    <none>        11434/TCP                42m
+default       service/webapp       NodePort    10.97.231.240   <none>        8050:32432/TCP           42m
+kube-system   service/kube-dns     ClusterIP   10.96.0.10      <none>        53/UDP,53/TCP,9153/TCP   57m
+
+NAMESPACE     NAME                        DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-system   daemonset.apps/kube-proxy   1         1         1       1            1           kubernetes.io/os=linux   57m
+
+NAMESPACE     NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+default       deployment.apps/llm       1/1     1            1           42m
+default       deployment.apps/webapp    1/1     1            1           42m
+kube-system   deployment.apps/coredns   1/1     1            1           57m
+
+NAMESPACE     NAME                                 DESIRED   CURRENT   READY   AGE
+default       replicaset.apps/llm-864b957b4d       1         1         1       42m
+default       replicaset.apps/webapp-755ccc6ffd    0         0         0       42m
+default       replicaset.apps/webapp-7f8bff5785    0         0         0       16m
+default       replicaset.apps/webapp-b8b8758d6     1         1         1       6m54s
+kube-system   replicaset.apps/coredns-66bc5c9577   1         1         1       57m
+NAMESPACE     NAME                     TYPE                            DATA   AGE
+kube-system   bootstrap-token-ouflno   bootstrap.kubernetes.io/token   6      58m
+NAMESPACE         NAME                                                   DATA   AGE
+default           chatbot-config                                         1      43m
+default           kube-root-ca.crt                                       1      58m
+kube-node-lease   kube-root-ca.crt                                       1      58m
+kube-public       cluster-info                                           2      58m
+kube-public       kube-root-ca.crt                                       1      58m
+kube-system       coredns                                                1      58m
+kube-system       extension-apiserver-authentication                     6      58m
+kube-system       kube-apiserver-legacy-service-account-token-tracking   1      58m
+kube-system       kube-proxy                                             2      58m
+kube-system       kube-root-ca.crt                                       1      58m
+kube-system       kubeadm-config                                         1      58m
+kube-system       kubelet-config                                         1      58m

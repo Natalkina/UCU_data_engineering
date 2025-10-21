@@ -1,0 +1,10 @@
+NAMESPACE     NAME                               READY   STATUS    RESTARTS      AGE
+default       llm-864b957b4d-h97jw               1/1     Running   0             44m
+default       webapp-b8b8758d6-lx7lv             1/1     Running   0             8m37s
+kube-system   coredns-66bc5c9577-8klz8           1/1     Running   0             59m
+kube-system   etcd-minikube                      1/1     Running   0             59m
+kube-system   kube-apiserver-minikube            1/1     Running   0             59m
+kube-system   kube-controller-manager-minikube   1/1     Running   0             59m
+kube-system   kube-proxy-qb7zj                   1/1     Running   0             59m
+kube-system   kube-scheduler-minikube            1/1     Running   0             59m
+kube-system   storage-provisioner                1/1     Running   1 (59m ago)   59m
