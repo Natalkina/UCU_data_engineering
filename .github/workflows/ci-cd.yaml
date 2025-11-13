@@ -61,7 +61,7 @@ jobs:
       - name: Determine target color
         id: color
         run: |
-          CURRENT_COLOR=$(kubectl get svc myapp -o=jsonpath='{.spec.selector.version}')
+          CURRENT_COLOR=$(kubectl get svc blue-green-demo -o=jsonpath='{.spec.selector.version}')
           if [ "$CURRENT_COLOR" = "blue" ]; then
             echo "color=green" >> $GITHUB_OUTPUT
           else
@@ -87,7 +87,7 @@ jobs:
       - name: Cleanup old version
         run: |
           if [ "${{ steps.color.outputs.color }}" = "blue" ]; then
-            kubectl delete deployment myapp-green --ignore-not-found
+            kubectl delete deployment deployment-green --ignore-not-found
           else
-            kubectl delete deployment myapp-blue --ignore-not-found
+            kubectl delete deployment deployment-blue --ignore-not-found
           fi
