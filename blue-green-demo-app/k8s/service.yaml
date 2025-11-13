@@ -5,6 +5,7 @@ metadata:
 spec:
   selector:
     app: blue-green-demo
+    version: blue
   ports:
     - protocol: TCP
       port: 80

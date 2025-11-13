@@ -32,13 +32,8 @@ jobs:
 
       - name: Build and push Docker image (blue)
         run: |
-          docker build -t sokilnatalka/ucu_test_kub:blue blue-green-demo-app
-          docker push sokilnatalka/ucu_test_kub:blue
-
-      - name: Build and push Docker image (green)
-        run: |
-          docker build -t sokilnatalka/ucu_test_kub:green blue-green-demo-app
-          docker push sokilnatalka/ucu_test_kub:green
+          docker build -t sokilnatalka/ucu_test_kub::${{ github.sha }} blue-green-demo-app
+          docker push sokilnatalka/ucu_test_kub::${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -63,11 +58,36 @@ jobs:
           aws sts get-caller-identity
           aws eks describe-cluster --name kubernetes_test --region eu-north-1
 
-      - name: Deploy Blue Deployment
+      - name: Determine target color
+        id: color
         run: |
-          kubectl apply -f blue-green-demo-app/k8s/deployment-blue.yaml --validate=false
-          kubectl apply -f blue-green-demo-app/k8s/service.yaml --validate=false
+          CURRENT_COLOR=$(kubectl get svc myapp -o=jsonpath='{.spec.selector.version}')
+          if [ "$CURRENT_COLOR" = "blue" ]; then
+            echo "color=green" >> $GITHUB_OUTPUT
+          else
+            echo "color=blue" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Deploy Green Deployment
+      - name: Deploy new color
         run: |
-          kubectl apply -f blue-green-demo-app/k8s/deployment-green.yaml --validate=false
+          COLOR=${{ steps.color.outputs.color }}
+          echo "Deploying $COLOR"
+          envsubst < blue-green-demo-app/k8s/deployment.yaml | kubectl apply -f -
+        
+      - name: Wait for rollout
+        run: |
+          COLOR=${{ steps.color.outputs.color }}
+          kubectl rollout status deployment/deployment-${COLOR} --timeout=120s
+
+      - name: Switch service to new version
+        run: |
+          COLOR=${{ steps.color.outputs.color }}
+          kubectl patch svc blue-green-demo -p "{\"spec\":{\"selector\":{\"app\":\"blue-green-demo\",\"version\":\"$COLOR\"}}}"
+
+      - name: Cleanup old version
+        run: |
+          if [ "${{ steps.color.outputs.color }}" = "blue" ]; then
+            kubectl delete deployment myapp-green --ignore-not-found
+          else
+            kubectl delete deployment myapp-blue --ignore-not-found
+          fi

@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: blue-deployment
+  name: deployment-${COLOR}
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: blue-green-demo
-      version: blue
+      version: ${COLOR}
   template:
     metadata:
       labels:
         app: blue-green-demo
-        version: blue
+        version: ${COLOR}
     spec:
       containers:
         - name: blue-green-demo
-          image: sokilnatalka/ucu_test_kub:blue
+          image: sokilnatalka/ucu_test_kub:${GITHUB_SHA}
           ports:
             - containerPort: 5000
