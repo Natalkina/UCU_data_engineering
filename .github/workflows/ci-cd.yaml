@@ -58,9 +58,10 @@ jobs:
         run: |
           aws eks update-kubeconfig --name kubernetes_test --region eu-north-1
 
-      - name: Verify kubectl connection
+      - name: Test AWS connection
         run: |
-          kubectl get nodes
+          aws sts get-caller-identity
+          aws eks describe-cluster --name kubernetes_test --region eu-north-1
 
       - name: Deploy Blue Deployment
         run: |
