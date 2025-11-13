@@ -32,8 +32,8 @@ jobs:
 
       - name: Build and push Docker image (blue)
         run: |
-          docker build -t sokilnatalka/ucu_test_kub::${{ github.sha }} blue-green-demo-app
-          docker push sokilnatalka/ucu_test_kub::${{ github.sha }}
+          docker build -t sokilnatalka/ucu_test_kub:${{ github.sha }} blue-green-demo-app
+          docker push sokilnatalka/ucu_test_kub:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
