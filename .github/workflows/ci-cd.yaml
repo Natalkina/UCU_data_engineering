@@ -70,7 +70,7 @@ jobs:
 
       - name: Deploy new color
         run: |
-          COLOR=${{ steps.color.outputs.color }}
+          export COLOR=${{ steps.color.outputs.color }}
           echo "Deploying $COLOR"
           env
           envsubst < blue-green-demo-app/k8s/deployment.yaml
@@ -78,12 +78,12 @@ jobs:
 
       - name: Wait for rollout
         run: |
-          COLOR=${{ steps.color.outputs.color }}
+          export COLOR=${{ steps.color.outputs.color }}
           kubectl rollout status deployment/deployment-${COLOR} --timeout=120s
 
       - name: Switch service to new version
         run: |
-          COLOR=${{ steps.color.outputs.color }}
+          export COLOR=${{ steps.color.outputs.color }}
           kubectl patch svc blue-green-demo -p "{\"spec\":{\"selector\":{\"app\":\"blue-green-demo\",\"version\":\"$COLOR\"}}}"
 
       - name: Cleanup old version
