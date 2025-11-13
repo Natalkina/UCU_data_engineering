@@ -72,8 +72,10 @@ jobs:
         run: |
           COLOR=${{ steps.color.outputs.color }}
           echo "Deploying $COLOR"
+          env
+          envsubst < blue-green-demo-app/k8s/deployment.yaml
           envsubst < blue-green-demo-app/k8s/deployment.yaml | kubectl apply -f -
-        
+
       - name: Wait for rollout
         run: |
           COLOR=${{ steps.color.outputs.color }}
