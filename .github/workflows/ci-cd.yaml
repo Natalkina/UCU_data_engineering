@@ -18,11 +18,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r app/requirements.txt
+          pip install -r blue-green-demo-app/app/requirements.txt
 
       - name: Run tests
         run: |
-          python -m unittest discover app
+          python -m unittest discover blue-green-demo-app/app
 
       - name: Log in to DockerHub
         uses: docker/login-action@v2
@@ -32,12 +32,12 @@ jobs:
 
       - name: Build and push Docker image (blue)
         run: |
-          docker build -t sokilnatalka/ucu_test_kub:blue .
+          docker build -t sokilnatalka/ucu_test_kub:blue blue-green-demo-app
           docker push sokilnatalka/ucu_test_kub:blue
 
       - name: Build and push Docker image (green)
         run: |
-          docker build -t sokilnatalka/ucu_test_kub:green .
+          docker build -t sokilnatalka/ucu_test_kub:green blue-green-demo-app
           docker push sokilnatalka/ucu_test_kub:green
 
   deploy:
@@ -60,9 +60,9 @@ jobs:
 
       - name: Deploy Blue Deployment
         run: |
-          kubectl apply -f k8s/deployment-blue.yaml
-          kubectl apply -f k8s/service.yaml
+          kubectl apply -f blue-green-demo-app/k8s/deployment-blue.yaml
+          kubectl apply -f blue-green-demo-app/k8s/service.yaml
 
       - name: Deploy Green Deployment
         run: |
-          kubectl apply -f k8s/deployment-green.yaml
+          kubectl apply -f blue-green-demo-app/k8s/deployment-green.yaml
