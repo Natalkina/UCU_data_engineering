@@ -1,4 +1,4 @@
-name: CI/CD Blue-Green
+name: CI/CD Blue-Green Deploy
 
 on:
   push:
