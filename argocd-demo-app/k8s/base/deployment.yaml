@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue-green-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blue-green-demo
+  template:
+    metadata:
+      labels:
+        app: blue-green-demo
+    spec:
+      containers:
+        - name: blue-green-demo
+          image: sokilnatalka/ucu_test_kub:${GITHUB_SHA}
+          ports:
+            - containerPort: 5000
