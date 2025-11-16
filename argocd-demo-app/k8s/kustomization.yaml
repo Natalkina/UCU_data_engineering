@@ -4,7 +4,9 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
+namespace: hello-gitops
 
 images:
-  - name: sokilnatalka/ucu_test_kub
-    newTag: latest
+- name: hello-gitops
+  newName: esokilnatalka/ucu_test_kub
+  newTag: latest
