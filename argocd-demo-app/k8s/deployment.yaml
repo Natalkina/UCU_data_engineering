@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: blue-green-demo
+  namespace: hello-gitops
 spec:
   replicas: 1
   selector:
