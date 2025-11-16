@@ -2,8 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../base/deployment.yaml
-  - ../../base/service.yaml
+  - ../../base
 
 images:
   - name: sokilnatalka/ucu_test_kub
