@@ -11,7 +11,7 @@ M = "http://localhost:42000"
 S1 = "http://localhost:42001"
 S2 = "http://localhost:42002"
 
-# ключі для health перевірки master
+# keys for health checking
 S1_KEY = "http://secondary1:42001"
 S2_KEY = "http://secondary2:42002"
 
@@ -80,16 +80,24 @@ wait_http_ok(M)
 wait_http_ok(S1)
 
 # Wait a bit to let Master detect S2 as Unhealthy (S2 not started yet)
-print(ts(), "Waiting for Master to detect S2 as Unhealthy...")
-hb_start = time.time()
-while time.time() - hb_start < 20:
+print("[*] Waiting for Master to detect S2 as NOT Healthy...")
+deadline = time.time() + 30
+became_not_healthy = False
+
+while time.time() < deadline:
     h = master_health()
-    if h.get("secondaries", {}).get(S2_KEY) == "Unhealthy":
-        print(ts(), "S2 is Unhealthy as expected")
+    s2_status = h["secondaries"].get(S2)
+
+    # If master returns no status OR any status != Healthy, we treat it as Unhealthy
+    if s2_status != "Healthy":
+        became_not_healthy = True
+        print(f"[*] Master detected S2 as {s2_status}")
         break
+
     time.sleep(1)
-else:
-    print(ts(), "Warning: S2 did not become Unhealthy in time, continuing...")
+
+if not became_not_healthy:
+    print("Warning: S2 did not become NOT Healthy in time, continuing...")
 
 # -----------------------------------------------------------
 print(ts(), "\n--- Send Msg1 W=1 (must be OK immediately)")

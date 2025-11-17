@@ -21,7 +21,7 @@ state = {
 
 message_id_count = count()
 
-REPLICATION_TIMEOUT = float(os.environ.get("REPLICATION_TIMEOUT", "10"))
+REPLICATION_TIMEOUT = float(os.environ.get("REPLICATION_TIMEOUT", "30"))
 
 retry_queue = []            # list of (secondaryUrl, message_id)
 retry_lock = threading.Lock()
