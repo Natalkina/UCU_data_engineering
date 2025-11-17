@@ -35,6 +35,9 @@ messages = UniqueMinHeap()
 # simulate delay (seconds) to demonstrate blocking replication on Master
 SECONDARY_DELAY = float(os.environ.get("SECONDARY_DELAY", "0"))
 
+expected_next = 0
+order_lock = threading.Lock()
+
 @app.route("/messages", methods=["GET"])
 def get_messages():
     return jsonify(list(messages)), 200

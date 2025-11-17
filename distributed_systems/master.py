@@ -23,6 +23,12 @@ message_id_count = count()
 
 REPLICATION_TIMEOUT = float(os.environ.get("REPLICATION_TIMEOUT", "10"))
 
+retry_queue = []            # list of (secondaryUrl, message_id)
+retry_lock = threading.Lock()
+
+RETRY_DELAY = 1.0           # seconds, can be exponential later
+MAX_RETRY_INTERVAL = 60
+
 # lock to enforce message ordering
 append_lock = threading.Lock()
 
@@ -49,29 +55,50 @@ def append_message():
         entry = {"id": message_id, "message": msg, "timestamp": timestamp}
         state['messages'].append(entry)
 
-        expected_write_concern -= 1
+        # expected_write_concern -= 1
         logging.info("Appended message locally: %s", entry)
 
     futures = []
     executor = ThreadPoolExecutor(max_workers=len(secondaries))
     for secondaryUrl in secondaries:
-        future = executor.submit(replicate, secondaryUrl, message_id)
+        future = executor.submit(replicate_with_retry, secondaryUrl, message_id)
         futures.append(future)
 
-    if expected_write_concern == 0:
+    if expected_write_concern == 1:
         return jsonify({"status": "ok", "entry": entry}), 201
 
+    # deadline to limit waiting for ACKs
+    deadline = time.time() + REPLICATION_TIMEOUT
+    remaining_ack = expected_write_concern - 1
     for fut in as_completed(futures):
         try:
-            ok = fut.result()
-            expected_write_concern -= 1
+            ok = fut.result(timeout=deadline - time.time())
+            remaining_ack -= 1
 
-            if expected_write_concern == 0:
+            if remaining_ack == 0:
                 return jsonify({"status": "ok", "entry": entry}), 201
         except:
             logging.info("Failed replication")
 
     return jsonify({"status": "error", "entry": entry}), 500
+
+
+def replicate_with_retry(secondaryUrl, message_id, max_attempts=10):
+    attempt = 0
+    while True:
+        try:
+            replicate(secondaryUrl, message_id)
+            return True
+        except:
+            attempt += 1
+            delay = min(RETRY_DELAY * 2 ** (attempt - 1), MAX_RETRY_INTERVAL)
+            logging.info("Retrying replication to %s after %.1f seconds (attempt %d)", secondaryUrl, delay, attempt)
+            time.sleep(delay)
+            if attempt >= max_attempts:
+                with retry_lock:
+                    retry_queue.append((secondaryUrl, message_id))
+                return False
+
 
 def replicate(secondaryUrl, message_id):
     message = state['messages'][message_id]
@@ -80,18 +107,37 @@ def replicate(secondaryUrl, message_id):
     replicate_url = f"{secondaryUrl}/replicate"
     logging.info("Replicating to %s ...", replicate_url)
 
-    try:
-        resp = requests.post(replicate_url, json=message, timeout=REPLICATION_TIMEOUT)
-        if resp.status_code == 200:
-            logging.info("ACK from %s", secondaryUrl)
-        else:
-            logging.error("Non-OK response from %s: %s - %s", secondaryUrl, resp.status_code, resp.text)
-            raise Exception("Non ok response")
-    except requests.RequestException as e:
-        logging.exception("Failed to replicate to %s: %s", secondaryUrl, e)
-        raise e
+    for mid in range(message_id + 1):
+        msg = state['messages'][mid]
+        try:
+            resp = requests.post(replicate_url, json=msg, timeout=REPLICATION_TIMEOUT)
+            if resp.status_code != 200:
+                raise Exception(f"Non-OK response {resp.status_code}")
+        except requests.RequestException as e:
+            logging.exception("Failed to replicate to %s: %s", secondaryUrl, e)
+            raise e
 
     logging.info("Replication finished, returning success to client")
+
+def retry_worker():
+    while True:
+        time.sleep(RETRY_DELAY)
+        with retry_lock:
+            if not retry_queue:
+                continue
+            items = list(retry_queue)
+            retry_queue.clear()
+
+        for secondaryUrl, message_id in items:
+            try:
+                replicate(secondaryUrl, message_id)   # try again
+            except:
+                # push back for next retry iteration
+                with retry_lock:
+                    retry_queue.append((secondaryUrl, message_id))
+
+# start retry worker thread
+threading.Thread(target=retry_worker, daemon=True).start()
 
 
 if __name__ == "__main__":
