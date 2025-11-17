@@ -63,6 +63,11 @@ def replicate():
     logging.info("Appended replicated message: %s", payload)
     return jsonify({"status": "ack"}), 200
 
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "alive"}), 200
+
+
 if __name__ == "__main__":
     host = "0.0.0.0"
     port = int(os.environ.get("PORT"))

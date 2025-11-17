@@ -29,8 +29,24 @@ retry_lock = threading.Lock()
 RETRY_DELAY = 1.0           # seconds, can be exponential later
 MAX_RETRY_INTERVAL = 60
 
+# heartbeat state
+secondary_health = {s: "UNKNOWN" for s in secondaries}   # Healthy, Suspected, Unhealthy
+HEARTBEAT_INTERVAL = 2
+HEARTBEAT_TIMEOUT = 1
+SUSPECT_THRESHOLD = 2    # number of failed heartbeats
+UNHEALTHY_THRESHOLD = 5  # number of failed heartbeats
+
+failure_counts = {s: 0 for s in secondaries}
+
 # lock to enforce message ordering
 append_lock = threading.Lock()
+
+def majority_quorum():
+    """Return True if majority of (master + secondaries) is Healthy."""
+    total_nodes = 1 + len(secondaries)
+    healthy_nodes = 1 + sum(1 for s in secondaries if secondary_health[s] == "Healthy")
+    return healthy_nodes >= (total_nodes // 2) + 1
+
 
 @app.route("/messages", methods=["GET"])
 def get_messages():
@@ -39,6 +55,14 @@ def get_messages():
 @app.route("/messages", methods=["POST"])
 def append_message():
     payload = request.get_json(silent=True)
+
+    #read-only mode if quorum is lost
+    if not majority_quorum():
+        return jsonify({
+            "error": "No quorum. Master is in read-only mode.",
+            "quorum": False,
+            "secondaries": secondary_health
+        }), 503
     if payload is None or "message" not in payload:
         return jsonify({"error": "missing 'message' in JSON body"}), 400
 
@@ -82,10 +106,22 @@ def append_message():
 
     return jsonify({"status": "error", "entry": entry}), 500
 
+@app.route("/health", methods=["GET"])
+def master_health():
+    return jsonify({
+        "status": "ok",
+        "secondaries": secondary_health,
+        "quorum": majority_quorum()
+    }), 200
+
 
 def replicate_with_retry(secondaryUrl, message_id, max_attempts=10):
     attempt = 0
     while True:
+        # skip if secondary is unhealthy
+        if secondary_health.get(secondaryUrl) == "Unhealthy":
+            logging.info("Skipping replication to %s because it is Unhealthy", secondaryUrl)
+            return False
         try:
             replicate(secondaryUrl, message_id)
             return True
@@ -138,6 +174,33 @@ def retry_worker():
 
 # start retry worker thread
 threading.Thread(target=retry_worker, daemon=True).start()
+
+
+def heartbeat_worker():
+    while True:
+        for sec in secondaries:
+            try:
+                r = requests.get(f"{sec}/health", timeout=HEARTBEAT_TIMEOUT)
+                if r.status_code == 200:
+                    secondary_health[sec] = "Healthy"
+                    failure_counts[sec] = 0
+                    continue
+            except:
+                pass
+
+            # failure path
+            failure_counts[sec] += 1
+            if failure_counts[sec] < SUSPECT_THRESHOLD:
+                secondary_health[sec] = "Suspected"
+            elif failure_counts[sec] < UNHEALTHY_THRESHOLD:
+                secondary_health[sec] = "Unhealthy"
+            else:
+                secondary_health[sec] = "Unhealthy"
+
+        time.sleep(HEARTBEAT_INTERVAL)
+
+# Start heartbeat thread
+threading.Thread(target=heartbeat_worker, daemon=True).start()
 
 
 if __name__ == "__main__":

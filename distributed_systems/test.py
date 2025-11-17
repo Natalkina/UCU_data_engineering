@@ -4,110 +4,165 @@ import subprocess
 import threading
 from datetime import datetime
 
+# ------------------------
+# Configuration
+# ------------------------
 M = "http://localhost:42000"
 S1 = "http://localhost:42001"
 S2 = "http://localhost:42002"
 
-REPLICATION_TIMEOUT = 30  # seconds
+# ключі для health перевірки master
+S1_KEY = "http://secondary1:42001"
+S2_KEY = "http://secondary2:42002"
 
+REPLICATION_TIMEOUT = 30  # max waiting for master POST
+
+# ------------------------
+# Helpers
+# ------------------------
 def ts():
-    """Timestamp prefix for logs."""
     return datetime.now().strftime("[%H:%M:%S]")
 
-def docker_compose(cmd):
-    """Run docker-compose commands."""
+def dc(cmd):
     print(ts(), "docker-compose", cmd)
     result = subprocess.run(
-        ["docker-compose"] + cmd.split(),
-        capture_output=True, text=True
+        ["docker-compose"] + cmd.split(), capture_output=True, text=True
     )
     print(result.stdout)
     if result.returncode != 0:
         print(result.stderr)
     return result.returncode == 0
 
-def wait_up(url, timeout=20):
-    print(ts(), f"Waiting for {url} to be up...")
+def wait_http_ok(url, endpoint="/messages", timeout=25):
+    print(ts(), f"Waiting for {url}{endpoint} ...")
     start = time.time()
     while time.time() - start < timeout:
         try:
-            r = requests.get(url + "/messages", timeout=1)
+            r = requests.get(url + endpoint, timeout=1)
             if r.status_code == 200:
                 print(ts(), f"{url} is UP")
                 return True
         except:
             pass
         time.sleep(0.5)
-    return False
+    raise RuntimeError(f"{url} did not start")
+
+def master_health():
+    try:
+        r = requests.get(M + "/health", timeout=1)
+        return r.json()
+    except:
+        return {"status": "down"}
 
 def send(msg, w):
-    print(ts(), f"POST {msg} w={w}")
+    print(ts(), f"SEND {msg} (W={w}) → Master")
     try:
         r = requests.post(
             M + "/messages",
             json={"message": msg, "write_concern": w},
             timeout=REPLICATION_TIMEOUT
         )
-        print(ts(), "=>", r.status_code, r.text)
+        print(ts(), "↳", r.status_code, r.text)
         return r
     except Exception as e:
-        print(ts(), "=> Exception:", e)
+        print(ts(), "Exception:", e)
         return None
 
+# ===========================================================
+# BEGIN TEST
+# ===========================================================
+print(ts(), "Stopping all containers…")
+dc("down")
 
-# --- 1. Clean environment ---
-print(ts(), "Stopping any running containers...")
-docker_compose("down")
+print(ts(), "\n=== Start Master + S1 ===")
+dc("up -d master secondary1")
+wait_http_ok(M)
+wait_http_ok(S1)
 
-# --- 2. Start Master + S1 only ---
-print(ts(), "Starting Master + S1...")
-docker_compose("up -d master secondary1")
+# Wait a bit to let Master detect S2 as Unhealthy (S2 not started yet)
+print(ts(), "Waiting for Master to detect S2 as Unhealthy...")
+hb_start = time.time()
+while time.time() - hb_start < 20:
+    h = master_health()
+    if h.get("secondaries", {}).get(S2_KEY) == "Unhealthy":
+        print(ts(), "S2 is Unhealthy as expected")
+        break
+    time.sleep(1)
+else:
+    print(ts(), "Warning: S2 did not become Unhealthy in time, continuing...")
 
-assert wait_up(M) and wait_up(S1), "Master or S1 did not start"
+# -----------------------------------------------------------
+print(ts(), "\n--- Send Msg1 W=1 (must be OK immediately)")
+r1 = send("Msg1", 1)
+assert r1 and r1.status_code == 201
 
-# --- 3. Send initial messages ---
-print(ts(), "2) Msg1 W=1 -> OK immediately")
-send("Msg1", 1)
+print(ts(), "\n--- Send Msg2 W=2 (S1 alive → must be OK)")
+r2 = send("Msg2", 2)
+assert r2 and r2.status_code == 201
 
-print(ts(), "3) Msg2 W=2 -> OK (S1 is up)")
-send("Msg2", 2)
-
-# --- 4. Send Msg3 W=3 in background ---
-print(ts(), "4) Msg3 W=3 -> will block until S2 joins; run in background")
+print(ts(), "\n--- Send Msg3 W=3 (must BLOCK — no S2 yet)")
 res_holder = {}
 def send_bg():
-    res_holder['r'] = send("Msg3", 3)
-
+    res_holder["res"] = send("Msg3", 3)
 t = threading.Thread(target=send_bg, daemon=True)
 t.start()
 
-time.sleep(10)
+time.sleep(25)
+print(ts(), "Master health while waiting for S2:", master_health())
 
-print(ts(), "5) Msg4 W=1 -> OK immediately")
-send("Msg4", 1)
+print(ts(), "\n--- Send Msg4 W=1 (must be OK immediately)")
+r4 = send("Msg4", 1)
+assert r4 and r4.status_code == 201
 
-# --- 5. Start S2 now ---
-print(ts(), "Starting S2 container...")
-docker_compose("up -d secondary2")
-assert wait_up(S2), "S2 didn't start"
+# ===========================================================
+# START S2
+# ===========================================================
+print(ts(), "\n=== Starting S2 ===")
+dc("up -d secondary2")
+wait_http_ok(S2)
 
-# --- 6. Poll until all messages appear on S2 ---
-print(ts(), "Waiting for full replication on S2...")
-
-expected_messages = ["Msg1", "Msg2", "Msg3", "Msg4"]
-timeout = 30
-start = time.time()
-
-while time.time() - start < timeout:
-    r = requests.get(S2 + "/messages")
-    s2_messages = [m["message"] for m in r.json()]
-    if s2_messages == expected_messages:
+# Wait for heartbeat to detect S2 as Healthy
+print(ts(), "Waiting for Master to mark S2 as Healthy...")
+hb_start = time.time()
+while time.time() - hb_start < 20:
+    h = master_health()
+    if h.get("secondaries", {}).get(S2_KEY) == "Healthy":
+        print(ts(), "S2 detected as Healthy")
         break
+    time.sleep(1)
+else:
+    print(ts(), "Warning: S2 did not become Healthy in time")
+
+print(ts(), "Master health now:", master_health())
+
+# Wait until Msg3 finishes
+print(ts(), "Waiting for Msg3 W=3 POST to finish...")
+t.join(timeout=20)
+print(ts(), "Msg3 result:", res_holder.get("res"))
+
+# ===========================================================
+# VALIDATE REPLICATION ON S2
+# ===========================================================
+print(ts(), "\nValidating messages on S2…")
+expected = ["Msg1", "Msg2", "Msg3", "Msg4"]
+
+replication_start = time.time()
+s2_msgs = []
+while time.time() - replication_start < 40:
+    try:
+        r = requests.get(S2 + "/messages")
+        s2_msgs = [m["message"] for m in r.json()]
+        print(ts(), "S2 →", s2_msgs)
+        if s2_msgs == expected:
+            break
+    except:
+        pass
     time.sleep(2)
 
-print(ts(), "S2 messages:", s2_messages)
+print(ts(), "\n=== FINAL RESULT ===")
+print("Messages on S2:", s2_msgs)
 
-if s2_messages == expected_messages:
-    print(ts(), "ACCEPTANCE TEST PASSED")
+if s2_msgs == expected:
+    print("\nACCEPTANCE TEST PASSED")
 else:
-    print(ts(), "ACCEPTANCE TEST FAILED", s2_messages)
+    print("\nACCEPTANCE TEST FAILED")
