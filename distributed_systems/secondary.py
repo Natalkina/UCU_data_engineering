@@ -24,11 +24,9 @@ class UniqueMinHeap:
     def __len__(self):
         return len(self.heap)
 
-    def __iter__(self):
-        # iterate from min to max without modifying the heap
-        # heapq.nsmallest returns a sorted list
-        for priority, item in heapq.nsmallest(len(self.heap), self.heap):
-            yield item
+    def to_ordered_list(self):
+    # returns items ordered by priority
+        return [item for _, item in sorted(self.heap)]
 
 messages = UniqueMinHeap()
 
@@ -40,7 +38,19 @@ order_lock = threading.Lock()
 
 @app.route("/messages", methods=["GET"])
 def get_messages():
-    return jsonify(list(messages)), 200
+# return contiguous prefix up to the first missing id to ensure total-order visibility
+    with replication_lock:
+        ordered = sorted(messages.heap)
+        out = []
+        next_expected = 0
+        for priority, payload in ordered:
+            if priority == next_expected:
+                out.append(payload)
+                next_expected += 1
+            elif priority > next_expected:
+            # gap -> stop here
+                break
+        return jsonify(out), 200
 
 @app.route("/replicate", methods=["POST"])
 def replicate():
@@ -58,7 +68,9 @@ def replicate():
         time.sleep(SECONDARY_DELAY)
 
     with replication_lock:
-        messages.push(payload['id'], payload)
+        msg_id = payload.get('id')
+        # dedup by id
+        messages.push(msg_id, payload)
 
     logging.info("Appended replicated message: %s", payload)
     return jsonify({"status": "ack"}), 200
