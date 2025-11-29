@@ -7,12 +7,9 @@ services:
     environment:
       PORT: 42000
       SECONDARIES: "http://secondary1:42001,http://secondary2:42002"
-      REPLICATION_TIMEOUT: "30"
+      REPLICATION_TIMEOUT: "5"
     ports:
       - "42000:42000"
-    depends_on:
-      - secondary1
-      - secondary2
     volumes:
       - .:/app
 
@@ -23,8 +20,7 @@ services:
     container_name: secondary1
     environment:
       PORT: 42001
-      # small delay to simulate slow secondary and to show Master's blocking behavior
-      SECONDARY_DELAY: "10"
+      SECONDARY_DELAY: "0"
     ports:
       - "42001:42001"
     volumes:
@@ -37,7 +33,6 @@ services:
     container_name: secondary2
     environment:
       PORT: 42002
-      # no delay here
       SECONDARY_DELAY: "0"
     ports:
       - "42002:42002"
