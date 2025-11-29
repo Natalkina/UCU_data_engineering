@@ -10,9 +10,6 @@ services:
       REPLICATION_TIMEOUT: "5"
     ports:
       - "42000:42000"
-    depends_on:
-      - secondary1
-      - secondary2
     volumes:
       - .:/app
 
