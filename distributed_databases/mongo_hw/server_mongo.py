@@ -12,7 +12,6 @@ class MongoCounter:
         self.db = self.client.web_counter
         self.collection = self.db.counters
 
-        # створити документ якщо не існує
         self.collection.update_one(
             {"_id": "main"},
             {"$setOnInsert": {"value": 0}},
