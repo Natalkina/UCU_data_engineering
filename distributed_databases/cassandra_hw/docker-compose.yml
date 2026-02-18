@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  cassandra1:
+    image: cassandra:4.1
+    container_name: cassandra1
+    hostname: cassandra1
+    networks:
+      - cassandra-net
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_SEEDS=cassandra1
+      - CASSANDRA_BROADCAST_ADDRESS=cassandra1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+    volumes:
+      - cassandra1-data:/var/lib/cassandra
+
+  cassandra2:
+    image: cassandra:4.1
+    container_name: cassandra2
+    hostname: cassandra2
+    networks:
+      - cassandra-net
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_SEEDS=cassandra1
+      - CASSANDRA_BROADCAST_ADDRESS=cassandra2
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+    depends_on:
+      - cassandra1
+    volumes:
+      - cassandra2-data:/var/lib/cassandra
+
+  cassandra3:
+    image: cassandra:4.1
+    container_name: cassandra3
+    hostname: cassandra3
+    networks:
+      - cassandra-net
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_SEEDS=cassandra1
+      - CASSANDRA_BROADCAST_ADDRESS=cassandra3
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+    depends_on:
+      - cassandra1
+    volumes:
+      - cassandra3-data:/var/lib/cassandra
+
+networks:
+  cassandra-net:
+
+volumes:
+  cassandra1-data:
+  cassandra2-data:
+  cassandra3-data:
