@@ -1,0 +1,41 @@
+services:
+  cassandra1:
+    image: cassandra:4.1
+    container_name: cassandra1
+    networks:
+      - cassandra-net
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra1
+
+  cassandra2:
+    image: cassandra:4.1
+    container_name: cassandra2
+    networks:
+      - cassandra-net
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra1
+    command: /bin/bash -c "sleep 30 && /usr/local/bin/docker-entrypoint.sh cassandra -f"
+    depends_on:
+      - cassandra1
+
+  cassandra3:
+    image: cassandra:4.1
+    container_name: cassandra3
+    networks:
+      - cassandra-net
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_SEEDS=cassandra1
+    command: /bin/bash -c "sleep 60 && /usr/local/bin/docker-entrypoint.sh cassandra -f"
+    depends_on:
+      - cassandra1
+
+networks:
+  cassandra-net:
