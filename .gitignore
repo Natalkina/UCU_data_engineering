@@ -3,3 +3,5 @@
 .containers
 containers/
 hazelcast-5.4.0/
+airflow.cfg
+simple_auth_manager_passwords.json.generated
