@@ -1,0 +1,7 @@
+apache-airflow-providers-sqlite
+apache-airflow-providers-standard
+apache-airflow-providers-fab
+apache-airflow-providers-http
+apache-airflow-providers-common-sql
+requests
+pandas
