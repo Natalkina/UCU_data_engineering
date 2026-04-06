@@ -1,7 +1,11 @@
-apache-airflow-providers-sqlite
+apache-airflow-providers-postgres
 apache-airflow-providers-standard
 apache-airflow-providers-fab
 apache-airflow-providers-http
 apache-airflow-providers-common-sql
+apache-airflow-providers-celery
+psycopg2-binary
+redis
 requests
 pandas
+flower
