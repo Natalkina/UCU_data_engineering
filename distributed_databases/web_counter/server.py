@@ -28,22 +28,26 @@ class MemoryCounter:
 class DiskCounter:
     def __init__(self):
         self.lock = threading.Lock()
-        self.save(0)
         if not os.path.exists(DB_FILE):
             self.save(0)
 
     def save(self, value):
         with open(DB_FILE, "w") as f:
             f.write(str(value))
+            f.flush()
+            os.fsync(f.fileno())
 
     def increment(self):
         with self.lock:
             with open(DB_FILE, "r+") as f:
-                val = int(f.read() or 0)
+                line = f.read().strip()
+                val = int(line) if line else 0
                 val += 1
                 f.seek(0)
                 f.write(str(val))
                 f.truncate()
+                f.flush()
+                os.fsync(f.fileno())
             return val
 
     def get_count(self):
@@ -57,9 +61,9 @@ class DiskCounter:
 
 
 # MemoryCounter
-counter = MemoryCounter()
+# counter = MemoryCounter()
 # DiscCounter
-# counter = DiskCounter()
+counter = DiskCounter()
 
 @app.route('/inc')
 def inc():

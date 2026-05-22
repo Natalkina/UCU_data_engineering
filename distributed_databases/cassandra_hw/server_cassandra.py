@@ -10,7 +10,6 @@ class CassandraCounter:
         self.cluster = Cluster(['127.0.0.1'])
         self.session = self.cluster.connect('web_counter')
 
-        # Ініціалізація лічильника
         stmt = "UPDATE counters SET value = value + 0 WHERE id='main';"
         self.session.execute(stmt)
 
@@ -24,7 +23,7 @@ class CassandraCounter:
         return row.value if row else 0
 
     def reset(self):
-        # У Cassandra counter не можна встановити значення напряму, треба "скинути" через декремент
+
         current = self.get_count()
         if current:
             stmt = f"UPDATE counters SET value = value - {current} WHERE id='main';"
