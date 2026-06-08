@@ -1,0 +1,130 @@
+<mxfile host="app.diagrams.net" agent="draw.io">
+  <diagram id="raw-solution" name="Raw Solution Diagram">
+    <mxGraphModel dx="1617" dy="954" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;" value="Raw Solution Diagram — Marketing Materials Collection &amp; Annotation" vertex="1">
+          <mxGeometry height="40" width="600" x="400" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="src_group" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;verticalAlign=top;" value="DATA SOURCES" vertex="1">
+          <mxGeometry height="80" width="900" x="250" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="src1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Mobile App" vertex="1">
+          <mxGeometry height="35" width="120" x="280" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="src2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Email Ingest" vertex="1">
+          <mxGeometry height="35" width="120" x="430" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="src3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Web Scraper" vertex="1">
+          <mxGeometry height="35" width="120" x="580" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="src4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Partner API" vertex="1">
+          <mxGeometry height="35" width="120" x="730" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ingest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" value="INGESTION GATEWAY&#xa;(API Gateway / Message Queue / Event Bus)&#xa;Rate limiting, auth, dedup check" vertex="1">
+          <mxGeometry height="60" width="600" x="400" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="src_group" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="ingest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="raw_store" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;size=10;" value="RAW OBJECT STORE&#xa;(Blob Storage — immutable raw files)" vertex="1">
+          <mxGeometry height="70" width="260" x="570" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="ingest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="raw_store">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="orchestrator" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" value="ORCHESTRATOR / WORKFLOW ENGINE&#xa;(Schedules and coordinates pipeline stages)" vertex="1">
+          <mxGeometry height="50" width="600" x="400" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="raw_store" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="orchestrator">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="preprocess" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center;" value="PRE-PROCESSING&#xa;• Normalize formats&#xa;• Resize&#xa;• De-duplicate&#xa;• Validate" vertex="1">
+          <mxGeometry height="100" width="160" x="250" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="ocr" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center;" value="OCR ENGINE&#xa;• Text extraction&#xa;• Layout detection&#xa;• Handwriting" vertex="1">
+          <mxGeometry height="100" width="160" x="450" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="ml" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center;" value="ML / NLP METADATA&#xa;• Industry classify&#xa;• Logo detection&#xa;• Color extraction" vertex="1">
+          <mxGeometry height="100" width="160" x="680" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="annotation" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=center;" value="ANNOTATION TOOL&#xa;• Human-in-the-loop&#xa;• Labeling UI&#xa;• QA review" vertex="1">
+          <mxGeometry height="100" width="160" x="890" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="orchestrator" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="preprocess">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="orchestrator" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="ocr">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="410" />
+              <mxPoint x="530" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="orchestrator" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="ml">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="orchestrator" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="annotation">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="400" />
+              <mxPoint x="970" y="400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="proc_store" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;size=10;" value="PROCESSED OBJECT STORE&#xa;(Processed images, thumbnails, derivatives)" vertex="1">
+          <mxGeometry height="70" width="300" x="450" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="preprocess" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="proc_store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="560" />
+              <mxPoint x="600" y="560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="ocr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="proc_store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="530" y="540" />
+              <mxPoint x="600" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="ml" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="proc_store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="540" />
+              <mxPoint x="600" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="annotation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="proc_store">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="930" y="560" />
+              <mxPoint x="600" y="560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="metadb" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;size=10;" value="METADATA DATABASE&#xa;(OCR text, labels, annotations, relationships)" vertex="1">
+          <mxGeometry height="70" width="260" x="470" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="proc_store" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="metadb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="search" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" value="SEARCH &amp; ANALYTICS LAYER&#xa;(Full-text search index + Dashboards + API)" vertex="1">
+          <mxGeometry height="50" width="420" x="390" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="metadb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;strokeWidth=2;" target="search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="text;html=0;align=left;verticalAlign=top;fontSize=10;fontStyle=0;" value="Legend:&#xa;→ Data Flow Direction&#xa;Yellow = Processing Components&#xa;Red/Pink = Storage&#xa;Green = Entry/Exit Points&#xa;Purple = Orchestration" vertex="1">
+          <mxGeometry height="100" width="180" x="50" y="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
