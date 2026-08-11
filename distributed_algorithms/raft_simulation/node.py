@@ -48,6 +48,12 @@ raft = RaftNode(node_id=NODE_ID, peers=PEER_IDS, transport=sys.modules[__name__]
 
 # Client API
 
+_COMMAND_STATUS_CODES = {
+    "committed": 201,
+    "not_leader": 409,
+    "timeout": 503,
+}
+
 @app.route("/command", methods=["POST"])
 def post_command():
     payload = request.get_json(silent=True)
@@ -55,25 +61,20 @@ def post_command():
         return jsonify({"error": "missing 'command' in JSON body"}), 400
 
     result = raft.submit_command(payload["command"])
-    if not result["success"]:
-        if result.get("error") == "not_leader":
-            return jsonify({
-                "error": "not_leader",
-                "leader_id": result.get("leader_id"),
-            }), 409
-        return jsonify({"error": result.get("error", "unknown_error")}), 503
-
-    status_code = 201 if result.get("committed") else 202
-    return jsonify(result), status_code
+    status = result["status"]
+    body = dict(result)
+    body["committed"] = status == "committed"
+    if status == "timeout":
+        body["warning"] = (
+            "no commit confirmation; the command may or may not have been "
+            "committed - retry against the current leader"
+        )
+    return jsonify(body), _COMMAND_STATUS_CODES.get(status, 500)
 
 
 @app.route("/log", methods=["GET"])
 def get_log():
-    return jsonify({
-        "committed_log": raft.get_log(),
-        "full_log": raft.get_full_log(),
-        "commit_index": raft.commit_index,
-    }), 200
+    return jsonify(raft.get_log_snapshot()), 200
 
 
 @app.route("/status", methods=["GET"])
@@ -93,16 +94,6 @@ def raft_request_vote():
 def raft_append_entries():
     args = request.get_json(force=True)
     return jsonify(raft.handle_append_entries(args)), 200
-
-
-# Self-test helper: partition simulation
-
-@app.route("/partition", methods=["POST"])
-def set_partition():
-    payload = request.get_json(silent=True) or {}
-    value = bool(payload.get("partitioned", True))
-    raft.set_partitioned(value)
-    return jsonify({"node_id": NODE_ID, "partitioned": value}), 200
 
 
 @app.route("/health", methods=["GET"])
